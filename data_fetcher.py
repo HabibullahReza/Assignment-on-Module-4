@@ -1,6 +1,6 @@
 # ==========================================
-# Real-Time Weather & Currency Data Fetcher
-# File Name: data_fetcher.py
+# Real Time Weather & Currency Data Fetcher
+# Student Project
 # ==========================================
 
 import json
@@ -8,86 +8,92 @@ import urllib.request
 from datetime import datetime
 import os
 
-# Store the latest fetched data
-latest_data = None
+
+# Last fetched data store করার জন্য
+last_result = None
 
 
-# ==========================================
-# Current Weather
-# ==========================================
-def weather():
-    global latest_data
+# -----------------------------
+# Get Weather Information
+# -----------------------------
+def get_weather():
 
-    city = input("Enter city name: ").strip()
+    global last_result
+
+    city = input("Enter city name: ")
 
     url = f"https://wttr.in/{city}?format=j1"
 
     try:
         response = urllib.request.urlopen(url)
-        data = json.loads(response.read())
+        weather_data = json.loads(response.read())
 
-        current = data["current_condition"][0]
+        current = weather_data["current_condition"][0]
 
-        temperature = current["temp_C"]
+        temp = current["temp_C"]
         humidity = current["humidity"]
-        wind_speed = current["windspeedKmph"]
+        wind = current["windspeedKmph"]
         condition = current["weatherDesc"][0]["value"]
 
-        current_time = datetime.now().strftime("%d-%m-%Y %I:%M %p")
+        time = datetime.now().strftime("%d-%m-%Y %I:%M %p")
 
         print("\n------ Weather Report ------")
-        print(f"City         : {city.title()}")
-        print(f"Temperature  : {temperature}°C")
-        print(f"Humidity     : {humidity}%")
-        print(f"Wind Speed   : {wind_speed} km/h")
-        print(f"Condition    : {condition}")
-        print(f"Fetched At   : {current_time}")
-        print("-----------------------------")
+        print("City:", city.title())
+        print("Temperature:", temp + "°C")
+        print("Humidity:", humidity + "%")
+        print("Wind Speed:", wind + " km/h")
+        print("Condition:", condition)
+        print("Fetched Time:", time)
+        print("----------------------------")
 
-        latest_data = {
+
+        last_result = {
             "type": "weather",
             "city": city.title(),
-            "temperature": temperature,
+            "temperature": temp,
             "humidity": humidity,
-            "wind_speed": wind_speed,
+            "wind_speed": wind,
             "condition": condition,
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
-    except Exception as e:
-        print("Unable to fetch weather information.")
-        print(e)
+
+    except:
+        print("Weather data পাওয়া যাচ্ছে না।")
 
 
-# ==========================================
-# Currency Exchange
-# ==========================================
-def currency():
-    global latest_data
+# -----------------------------
+# Get Currency Rate
+# -----------------------------
+def get_currency():
+
+    global last_result
 
     base = input("Base Currency: ").upper()
     target = input("Target Currency: ").upper()
 
+
     url = f"https://open.er-api.com/v6/latest/{base}"
 
+
     try:
+
         response = urllib.request.urlopen(url)
-        data = json.loads(response.read())
+        currency_data = json.loads(response.read())
 
-        if target not in data["rates"]:
-            print("Invalid target currency.")
-            return
 
-        rate = data["rates"][target]
+        rate = currency_data["rates"][target]
 
-        current_time = datetime.now().strftime("%d-%m-%Y %I:%M %p")
+        time = datetime.now().strftime("%d-%m-%Y %I:%M %p")
 
-        print("\n------ Exchange Rate ------")
+
+        print("\n------ Currency Rate ------")
         print(f"1 {base} = {rate} {target}")
-        print(f"Fetched At : {current_time}")
+        print("Fetched Time:", time)
         print("---------------------------")
 
-        latest_data = {
+
+        last_result = {
             "type": "currency",
             "base": base,
             "target": target,
@@ -95,111 +101,128 @@ def currency():
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
-    except Exception as e:
-        print("Unable to fetch exchange rate.")
-        print(e)
+
+    except:
+        print("Currency data পাওয়া যাচ্ছে না।")
 
 
-# ==========================================
-# Save Data to JSON
-# ==========================================
-def save_json():
-    global latest_data
+# -----------------------------
+# Save Data
+# -----------------------------
+def save_data():
 
-    if latest_data is None:
-        print("No data available to save.")
+    if last_result is None:
+        print("কোনো data পাওয়া যায়নি।")
         return
 
-    try:
-        with open("data.json", "w") as file:
-            json.dump(latest_data, file, indent=4)
 
-        print("Data saved successfully.")
+    with open("data.json", "w") as file:
 
-    except Exception as e:
-        print("Failed to save data.")
-        print(e)
+        json.dump(last_result, file, indent=4)
 
 
-# ==========================================
+    print("Data saved successfully.")
+
+
+
+# -----------------------------
 # View Saved Data
-# ==========================================
-def view_json():
+# -----------------------------
+def view_data():
+
 
     if not os.path.exists("data.json"):
-        print("No saved data found.")
+
+        print("No previous data found.")
         return
 
-    try:
-        with open("data.json", "r") as file:
-            data = json.load(file)
-
-        print("\n====== Last Saved Data ======")
-
-        if data["type"] == "weather":
-
-            print("Type         : Weather")
-            print(f"City         : {data['city']}")
-            print(f"Temperature  : {data['temperature']}°C")
-            print(f"Humidity     : {data['humidity']}%")
-            print(f"Wind Speed   : {data['wind_speed']} km/h")
-            print(f"Condition    : {data['condition']}")
-            print(f"Saved Time   : {data['time']}")
-
-        elif data["type"] == "currency":
-
-            print("Type         : Currency")
-            print(f"Base         : {data['base']}")
-            print(f"Target       : {data['target']}")
-            print(f"Rate         : {data['rate']}")
-            print(f"Saved Time   : {data['time']}")
-
-        print("==============================")
-
-    except Exception as e:
-        print("Unable to read saved data.")
-        print(e)
 
 
-# ==========================================
+    with open("data.json", "r") as file:
+
+        data = json.load(file)
+
+
+
+    print("\n====== Previous Saved Data ======")
+
+
+    if data["type"] == "weather":
+
+        print("Type:", "Weather")
+        print("City:", data["city"])
+        print("Temperature:", data["temperature"] + "°C")
+        print("Humidity:", data["humidity"] + "%")
+        print("Condition:", data["condition"])
+        print("Saved Time:", data["time"])
+
+
+    else:
+
+        print("Type:", "Currency")
+        print("Base:", data["base"])
+        print("Target:", data["target"])
+        print("Rate:", data["rate"])
+        print("Saved Time:", data["time"])
+
+
+    print("=================================")
+
+
+
+# -----------------------------
 # Main Menu
-# ==========================================
-def main_menu():
+# -----------------------------
+def menu():
 
     while True:
+
 
         print("\n========== Data Fetcher ==========")
         print("1. Current Weather")
         print("2. Currency Exchange Rate")
-        print("3. Save Result to JSON File")
-        print("4. View Previous Saved Data")
+        print("3. Save Result")
+        print("4. View Previous Data")
         print("5. Exit")
         print("==================================")
 
-        choice = input("Enter your choice: ")
+
+        choice = input("Choose option: ")
+
+
 
         if choice == "1":
-            weather()
+
+            get_weather()
+
 
         elif choice == "2":
-            currency()
+
+            get_currency()
+
 
         elif choice == "3":
-            save_json()
+
+            save_data()
+
 
         elif choice == "4":
-            view_json()
+
+            view_data()
+
 
         elif choice == "5":
-            print("\nThank you for using Data Fetcher.")
+
+            print("Program closed.")
             break
 
+
         else:
-            print("Invalid choice! Please try again.")
+
+            print("Wrong choice. Try again.")
 
 
-# ==========================================
-# Program Starts Here
-# ==========================================
-if __name__ == "__main__":
-    main_menu()
+
+# Program Start
+
+menu()
